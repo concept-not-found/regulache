@@ -6,7 +6,7 @@ Regulache
 ### Installation
 Regulache is a [Groovy](http://groovy.codehaus.org/) [Maven](http://maven.apache.org/) project.
 
-#### Maven Dependency Snippet
+Maven dependency snippet
 
 ```xml
 <dependency>
@@ -16,7 +16,7 @@ Regulache is a [Groovy](http://groovy.codehaus.org/) [Maven](http://maven.apache
 </dependency>
 ```
 
-#### Use [Groovy Grape](http://groovy.codehaus.org/Grape) for scripts
+[Groovy Grape](http://groovy.codehaus.org/Grape) snippet
 
     @Grab(group="com.github.concept-not-found", module="regulache", version="1-SNAPSHOT")
 
