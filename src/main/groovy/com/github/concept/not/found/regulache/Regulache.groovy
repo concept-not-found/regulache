@@ -21,8 +21,7 @@ def class Regulache {
 	 * Makes a web service get for json content and caches successful result.
 	 *
 	 * Subsequent calls will always return cached value unless ignore-cache parameters are used.  If cached is ignored,
-	 * the cache will be updated with the next successful result.  On failure to get a result, the cached value will be
-	 * returned anyways.
+	 * the cache will be updated with the next successful result.
 	 *
 	 * Required parameters:
 	 * <ul>
