@@ -55,8 +55,8 @@ On a successful GET request, the request is available in the provided mongoDB co
       }
     }
 
-Full working example using League of Legends API: (example.groovy)[https://github.com/concept-not-found/regulache/blob/master/example.groovy]
-For more details, (read the source)[https://github.com/concept-not-found/regulache/blob/master/src/main/groovy/com/github/concept/not/found/regulache/Regulache.groovy].
+Full working example using League of Legends API: [example.groovy](https://github.com/concept-not-found/regulache/blob/master/example.groovy)
+For more details, [read the source](https://github.com/concept-not-found/regulache/blob/master/src/main/groovy/com/github/concept/not/found/regulache/Regulache.groovy).
 
 ### Copyright and License
 <pre>
