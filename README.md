@@ -24,7 +24,7 @@ Maven dependency snippet
 Regulache is based off of [Groovy's RESTClient](http://groovy.codehaus.org/modules/http-builder/doc/rest.html)
 
     def regulache = new Regulache("http://base-url.com/context/", monogoDBCollection)
-    def json = regulache.executeGet(
+    def (json, cached) = regulache.executeGet(
       path: "web/service/path/with/{namedParameters}",
       "path-parameters": [
         namedParameters: "substitutePathParameters"

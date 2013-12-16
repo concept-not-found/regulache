@@ -22,6 +22,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
 import static org.mockito.Matchers.eq
 import static org.mockito.Matchers.any
@@ -46,10 +48,10 @@ def class RegulacheTest {
 	}
 
 	@Test(expected = HttpResponseException)
-	void failOnNon200() {
+	void failOnNon200or404() {
 		stubFor(get(urlEqualTo("/non-existent"))
 				.willReturn(aResponse()
-				.withStatus(404)))
+				.withStatus(500)))
 
 		regulache.executeGet(
 				path: "/non-existent"
@@ -69,13 +71,26 @@ def class RegulacheTest {
 	}
 
 	@Test
+	void ensureNullOn404() {
+		stubFor(get(urlEqualTo("/non-existent"))
+				.willReturn(aResponse()
+				.withStatus(404)))
+
+		def (json, cached) = regulache.executeGet(
+				path: "/non-existent"
+		)
+
+		assertNull(json)
+	}
+
+	@Test
 	void ensurePathParametersAreSubstituted() {
 		stubFor(get(urlEqualTo("/api/na/summary/1234"))
 				.willReturn(aResponse()
 				.withHeader("Content-Type", ContentType.JSON.toString())
 				.withBody("[true]")))
 
-		def json = regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/api/{region}/summary/{userid}",
 				"path-parameters": [
 						region: "na",
@@ -94,10 +109,11 @@ def class RegulacheTest {
 				.withHeader("Content-Type", ContentType.JSON.toString())
 				.withBody('{"responseJson":42}')))
 
-		regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/url-to-cache"
 		)
 
+		assertFalse(cached)
 		def keyCaptor = ArgumentCaptor.forClass(BasicDBObject)
 		def valueCaptor = ArgumentCaptor.forClass(BasicDBObject)
 		verify(cache).update(keyCaptor.capture(), valueCaptor.capture(), eq(true), eq(false))
@@ -125,10 +141,11 @@ def class RegulacheTest {
 	void ensurePreviouslyCachedRequestsUseTheCache() {
 		givenAPreviouslyCachedValue(System.currentTimeMillis())
 
-		def json = regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/previously-cached"
 		)
 
+		assertTrue(cached)
 		verifyNoHttpRequestsAreMade()
 		assertEquals(["cached-value"], json)
 	}
@@ -142,11 +159,12 @@ def class RegulacheTest {
 				.withHeader("Content-Type", ContentType.JSON.toString())
 				.withBody('["not from cache"]')))
 
-		def json = regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/should-ignore-cache",
 				"ignore-cache": true
 		)
 
+		assertFalse(cached)
 		verify(cache, never()).findOne((DBObject) any())
 		assertEquals(["not from cache"], json)
 	}
@@ -160,11 +178,12 @@ def class RegulacheTest {
 				.withHeader("Content-Type", ContentType.JSON.toString())
 				.withBody('["not from cache"]')))
 
-		def json = regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/should-ignore-cache",
 				"ignore-cache-if-older-than": TimeUnit.MINUTES.toMillis(30)
 		)
 
+		assertFalse(cached)
 		assertEquals(["not from cache"], json)
 	}
 
@@ -172,11 +191,12 @@ def class RegulacheTest {
 	void ensureCacheValueIsUsedIfFresh() {
 		givenAPreviouslyCachedValue(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1))
 
-		def json = regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/previously-cached",
 				"ignore-cache-if-older-than": TimeUnit.DAYS.toMillis(1)
 		)
 
+		assertTrue(cached)
 		verifyNoHttpRequestsAreMade()
 		assertEquals(["cached-value"], json)
 	}

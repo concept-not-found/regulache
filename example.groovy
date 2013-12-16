@@ -32,7 +32,7 @@ try {
 
 def findSummonerIdByName(regulache, name) {
 	try {
-		def json = regulache.executeGet(
+		def (json, cached) = regulache.executeGet(
 				path: "/api/lol/{region}/v1.1/summoner/by-name/{name}",
 				"path-parameters": [
 						region: "na",

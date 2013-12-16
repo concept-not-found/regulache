@@ -43,9 +43,9 @@ def class Regulache {
 	 * using find().
 	 *
 	 * @param parameterMap the parameters
-	 * @throws HttpResponseException on non 200 status
+	 * @throws HttpResponseException on non 200/404 status
 	 * @throws IllegalStateException if response content type is not json, cause includes HttpResponseException
-	 * @return the json response
+	 * @return an array of size 2, with the first being the json (null on 404) response and second a boolean indicating if this value is cached
 	 */
 	def executeGet(parameterMap) {
 		def headers = [:]
@@ -75,22 +75,31 @@ def class Regulache {
 			if (cacheValue != null) {
 				def cacheValueAge = System.currentTimeMillis() - cacheValue["last-retrieved"]
 				if (cacheValueAge < ignoreCacheIfOlderThan) {
-					return cacheValue.data
+					return [cacheValue.data, true]
 				}
 			}
 		}
 
 		def transientHeaders = parameterMap["transient-headers"] ?: [:]
 		def transientQueries = parameterMap["transient-queries"] ?: [:]
-		def response = client.get(
-				path:  populatePathParameters(path, pathParameters),
-				headers: headers + transientHeaders,
-				query: queries + transientQueries)
-		if (response.contentType != ContentType.JSON.toString()) {
-			throw new IllegalStateException("expected json Content-Type, but was $response.contentType",
-					new HttpResponseException(response))
+		def json
+		try {
+			def response = client.get(
+					path:  populatePathParameters(path, pathParameters),
+					headers: headers + transientHeaders,
+					query: queries + transientQueries)
+			if (response.contentType != ContentType.JSON.toString()) {
+				throw new IllegalStateException("expected json Content-Type, but was $response.contentType",
+						new HttpResponseException(response))
+			}
+			json = response.data
+		} catch (HttpResponseException e) {
+			if (e.response.statusLine.statusCode == 404) {
+				json = null
+			} else {
+				throw e
+			}
 		}
-		def json = response.data
 
 		cacheValue = cacheKey.clone()
 		cacheValue["last-retrieved"] = System.currentTimeMillis()
@@ -102,7 +111,7 @@ def class Regulache {
 				false
 		)
 
-		json
+		[json, false]
 	}
 
 	def populatePathParameters(path, pathParameters) {
