@@ -15,6 +15,13 @@ def class Regulache {
 		this.base = addTrailingSlashIfMissing(base)
 		client = new RESTClient(this.base)
 		this.cache = cache
+		cache.ensureIndex([
+				headers: 1,
+				base: 1,
+				path: 1,
+				"path-parameters": 1,
+				queries: 1
+		] as BasicDBObject)
 	}
 
 	/**
@@ -71,7 +78,7 @@ def class Regulache {
 		def ignoreCache = parameterMap["ignore-cache"] ?: false
 		if (!ignoreCache) {
 			cacheValue = cache.findOne(cacheKey as BasicDBObject)
-			def ignoreCacheIfOlderThan = parameterMap["ignore-cache-if-older-than"] ?: Long.MAX_VALUE
+			def ignoreCacheIfOlderThan = parameterMap["ignore-cache-if-older-than"] != null ? parameterMap["ignore-cache-if-older-than"] : Long.MAX_VALUE
 			if (cacheValue != null) {
 				def cacheValueAge = System.currentTimeMillis() - cacheValue["last-retrieved"]
 				if (cacheValueAge < ignoreCacheIfOlderThan) {
